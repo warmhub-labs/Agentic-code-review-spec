@@ -1,55 +1,96 @@
-# Council Review — Specification, Protocol, and Harness
+# Council Review
 
-A portable natural-language specification for a multi-agent code review system,
-plus an experimental protocol for having an agent build one from that
-specification and measuring whether it finds the defects it should.
+**A multi-agent code review system, specified in natural language — complete
+enough that an agent can build a working one from the specification alone.**
+
+Four independent agents have done exactly that. Their results are in
+[`RESULTS.md`](RESULTS.md).
 
 Derived from the review system running in production at WarmHub, but written to
 be implemented anywhere, in any language, against any model provider. Nothing
 here depends on a particular code-hosting platform.
 
-**Status:** internal. Prepared for public distribution; not yet published.
-
-| | |
-|---|---|
-| [`RESULTS.md`](RESULTS.md) | What four independent implementations built from this spec actually scored |
-| [`DISCLAIMER.md`](DISCLAIMER.md) | **Read before relying on any of this.** No warranty; this is a review aid, not a security control |
-| [`LICENSE`](LICENSE) | Apache License 2.0 |
-
 ---
 
-## ⚠️ If you are using this to evaluate an agent
+## Build it
 
-**This repository contains the blind corpus.** The seeded-defect library in
-`harness/src/defects/` defines every case an implementation is measured against,
-including the classes deliberately withheld from the labeled public set.
+Give your agent two directories and one instruction.
 
-An agent with access to this repository is not blind, and any recall number it
-produces is meaningless. `make-workspace.ts` exists precisely to build the
-isolated workspace an implementer is given — use it, and keep the implementer
-away from everything else:
+**Hand it:**
 
-```bash
-bun harness/src/make-workspace.ts --out /somewhere/else --force
+```
+spec/      the specification — ten parts, ~18k words
+schema/    the four wire contracts it must satisfy
 ```
 
-It audits its own output by filename and by content against a forbidden-token
-list derived from the hidden corpus, and refuses to emit a workspace that
-mentions any of it. That check exists because an earlier version leaked the
-defect-class taxonomy through a directory copy nobody looked at twice.
+`schema/` lives at `harness/schema/`; copy those four `.json` files anywhere
+convenient. Nothing else in this repository is needed to build the system.
 
-If you extend the corpus for your own evaluation, add cases to the library and
-regenerate. If you publish results, say which corpus version produced them.
+**Tell it:**
+
+> Read every part of `spec/` before writing any code — all ten, in order. Then
+> build a system satisfying the `ReviewRequest` → `ReviewResult` contract in
+> `schema/`.
+>
+> Implement the hard gates in `spec/09-conformance.md` and provide a
+> `conformance` subcommand that runs them against in-memory fakes, with no model
+> provider configured. Get that suite green before you write a single prompt —
+> routing, packet preparation, and deterministic post-processing are most of the
+> system and none of them need a model.
+>
+> Required scope: Parts 1–5 and Part 7, plus gates C-01…C-51 and C-61…C-63.
+> Part 6 (multi-turn state) is optional; skip it on a first build.
+>
+> Record every point where the specification was ambiguous or silent in a
+> `DECISIONS.md`, citing the section. Where the spec states a MUST, follow it
+> even if you would design it differently.
+
+**You get:** a CLI that takes a change and returns structured findings with
+evidence anchors, severity, and an honest account of how much review actually
+ran.
+
+### What "working" means
+
+The specification ships its own acceptance test. `spec/09-conformance.md`
+defines 63 hard gates — contract violations, all checkable deterministically
+against fakes in about a second, with no provider and no cost. If the
+conformance suite is green, the implementation is conforming.
+
+That is the bar to aim for first. Defect-finding quality comes after, and only
+means anything once the output can be trusted to say what it did.
+
+### What it costs to run
+
+From the four measured implementations: **$0.40–0.43 median per review**, p95
+latency around 150 seconds. The specification carries budget caps of $5.00 and
+900 seconds, and both were comfortable.
+
+### Longer form
+
+[`protocol/implementer-brief.md`](protocol/implementer-brief.md) is the fuller
+brief handed to the agents whose results are in `RESULTS.md`. It includes a
+"Traps" section — the things implementations get wrong, each mapped to the gate
+that catches it — which is worth handing over verbatim.
+
+Note that it is written for a *blind evaluation*, so it references a held-out
+corpus and a scorer. Ignore those parts if you are just building the system.
 
 ---
 
-## Three things
+## What's in here
 
-| | What it is | Read when |
+| | What it is | You need it if |
 |---|---|---|
-| **`spec/`** | The specification. Ten parts, implementation-independent. | You want to understand or build the system. |
-| **`protocol/`** | The experimental loop: implement → conform → evaluate → holdout. | You want to run the experiment. |
-| **`harness/`** | Runnable corpus generator, conformance runner, and scorer. | You want to measure something. |
+| **`spec/`** | The specification. Ten parts, implementation-independent. | **You want a working reviewer.** This is the deliverable. |
+| **`harness/schema/`** | The four wire contracts. | Same — hand these over with `spec/`. |
+| **`protocol/`** | The experimental loop: implement → conform → evaluate → blind. | You want to measure how well an implementation does. |
+| **`harness/`** | Corpus generator, workspace builder, scorer, conformance runner. | Same. Not needed to build the system. |
+| [`RESULTS.md`](RESULTS.md) | What four independent implementations scored. | You want evidence the spec is sufficient. |
+| [`DISCLAIMER.md`](DISCLAIMER.md) | **Read before relying on any of this.** | Always. This is a review aid, not a security control. |
+| [`LICENSE`](LICENSE) | Apache License 2.0. | |
+
+Most of this repository is evaluation apparatus. If your goal is a working
+review system, you can ignore everything except `spec/` and the four schemas.
 
 ---
 
@@ -82,23 +123,49 @@ The load-bearing ideas, in one line each:
 
 ---
 
-## Quick start
+Where to start reading: [`spec/00-overview.md`](spec/00-overview.md). Parts 1–5
+are the core contract, Part 7 is the honesty rules, Part 9 is the conformance
+checklist. Parts 6 and 8 — multi-turn state and external ports — matter for a
+production deployment and can be skipped on a first build.
 
-### Read the spec
+---
 
-Start at [`spec/00-overview.md`](spec/00-overview.md). Parts 1–5 are the core
-contract; Part 7 is the honesty rules; Part 9 is the conformance checklist.
+# Evaluating an implementation
 
-Parts 6 and 8 (multi-turn state machine, external ports) matter for a production
-deployment and are optional for the single-turn evaluation track.
+**Everything below is apparatus for measuring how well an implementation
+performs. None of it is needed to build one.** If you came here to hand a
+specification to an agent, you are already done.
 
-### Run the harness
+## ⚠️ This repository contains the blind corpus
+
+The seeded-defect library in `harness/src/defects/` defines every case an
+implementation is measured against — including the classes deliberately withheld
+from the labeled practice set.
+
+**An agent with access to this repository is not blind, and any recall number it
+produces is meaningless.** Build the isolated workspace instead:
+
+```bash
+bun harness/src/make-workspace.ts --out /somewhere/else --force
+```
+
+That ships the specification, the four schemas, the labeled practice cases with
+their ground truth, and a self-scorer — and withholds everything else. It audits
+its own output by filename *and* content against a forbidden-token list derived
+from the hidden corpus, and refuses to emit a workspace that mentions any of it.
+That check exists because an earlier version leaked the defect-class taxonomy
+through a directory copy nobody looked at twice.
+
+If you extend the corpus, add cases to the library and regenerate. If you publish
+results, say which corpus version produced them.
+
+## Running the harness
 
 ```bash
 cd harness
 bun install
-bun run seed        # generate the corpus (16 cases, real git repos)
-bun run verify      # self-test it — a corpus that fails this is not evidence
+bun run seed        # generate the corpus — 23 cases, real git repositories
+bun run verify      # self-test it; a corpus that fails this is not evidence
 ```
 
 Smoke-test the pipeline against the null candidate, which implements routing and
@@ -111,24 +178,15 @@ bun src/score.ts --tag null-baseline
 bun src/conformance.ts --tag null-baseline
 ```
 
-The null candidate scores 0 (gated on reviewer completion), 100% routing
-accuracy, 0% recall, and fails exactly one conformance gate — the secret
-detector. That is what "found nothing, honestly" looks like, and it is the floor
-any real candidate must clear.
+It scores 0 — gated on reviewer completion — with 100% routing accuracy, 0%
+recall, and exactly one failing conformance gate: the secret detector. That is
+what "found nothing, honestly" looks like, and it is the floor any real candidate
+must clear.
 
-### Run the experiment
+## Running the experiment
 
-Follow [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md).
-
-```bash
-bun src/make-workspace.ts --out <dir> --force
-```
-
-builds the implementer's workspace: the spec, the four wire contracts, the
-**labeled public cases** with their ground truth, a self-scorer, and the brief.
-The hidden splits stay out by construction — the builder audits its own output
-by filename *and* content against a forbidden-token list derived from the hidden
-corpus, and refuses to emit a workspace that mentions them.
+Follow [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md): implement → conform →
+evaluate on the development split → spend the blind split once.
 
 ---
 
