@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/council/specialist-output@1.0.0.json",
+  "title": "SpecialistOutput",
+  "description": "What a single council reviewer returns. See spec/03-council.md §3.6. Every constraint below is a rejection condition: a response that violates any of them is a reviewer FAILURE, not an empty result.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reviewed", "files_reviewed", "audit_rows_reviewed", "summary", "candidates"],
+  "properties": {
+    "reviewed": {
+      "const": true,
+      "description": "MUST be boolean true. Affirms engagement. Anything else — false, missing, the string \"true\" — is a failure. This is the anti-silence mechanism."
+    },
+    "files_reviewed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths actually inspected. Empty is legal when the reviewer worked from the shared diff alone."
+    },
+    "audit_rows_reviewed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Every in-scope deterministic audit row discharged, by label. [] only when no in-scope rows exist. Rows reported as findings still appear here."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 600,
+      "description": "One-line conclusion in the reviewer's own words. REQUIRED even when candidates is empty — it is what lets a reader see what a quiet lane actually inspected."
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_ref", "title", "severity", "category", "confidence", "evidence", "details"],
+        "properties": {
+          "candidate_ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Response-local id (c1, c2, ...). The orchestrator namespaces it as <persona-id>:<ref>."
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+          "category": {
+            "type": "string",
+            "enum": [
+              "correctness",
+              "security",
+              "performance",
+              "testing",
+              "maintainability",
+              "readability",
+              "structure",
+              "audience",
+              "completeness",
+              "ci-workflow"
+            ]
+          },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/Anchor" }
+          },
+          "details": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Concrete failure scenario: when X arrives, the code does Y, producing wrong state Z. Security findings state the attacker model."
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "Anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "side", "start_line", "start_side"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "side": { "type": ["string", "null"], "enum": ["LEFT", "RIGHT", null] },
+        "start_line": { "type": ["integer", "null"], "minimum": 1 },
+        "start_side": { "type": ["string", "null"], "enum": ["LEFT", "RIGHT", null] },
+        "diff_hunk": { "type": ["string", "null"] },
+        "symbol": { "type": ["string", "null"] },
+        "code_context_hash": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

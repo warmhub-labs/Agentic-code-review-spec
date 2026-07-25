@@ -1,0 +1,20 @@
+{
+  "name": "council-review-harness",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Corpus generator, conformance runner, and scorer for the council-review NL specification experiment.",
+  "scripts": {
+    "seed": "bun src/seed.ts",
+    "reseed": "bun src/seed.ts --force",
+    "verify": "bun src/verify.ts",
+    "evaluate": "bun src/evaluate.ts",
+    "score": "bun src/score.ts",
+    "conformance": "bun src/conformance.ts",
+    "workspace": "bun src/make-workspace.ts"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "typescript": "^5.6.0"
+  }
+}

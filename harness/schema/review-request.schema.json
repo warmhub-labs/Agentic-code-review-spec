@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/council/review-request@1.0.0.json",
+  "title": "ReviewRequest",
+  "description": "The input contract of a conforming code review system. See spec/01-review-request.md §1.2. Consumers MUST ignore unknown fields rather than reject them; this schema is intentionally permissive at the top level for forward extensibility.",
+  "type": "object",
+  "required": ["schema_version", "change", "workspace", "diff", "policy", "run"],
+  "properties": {
+    "schema_version": { "type": "string" },
+
+    "change": {
+      "type": "object",
+      "required": ["id", "title", "base_sha", "head_sha"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "base_ref": { "type": "string" },
+        "base_sha": { "type": "string", "minLength": 1 },
+        "head_sha": { "type": "string", "minLength": 1 },
+        "merge_base_sha": { "type": "string" }
+      }
+    },
+
+    "workspace": {
+      "type": "object",
+      "required": ["root"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "base_root": { "type": ["string", "null"] }
+      }
+    },
+
+    "diff": {
+      "type": "object",
+      "required": ["unified", "changed_files"],
+      "properties": {
+        "unified": { "type": "string" },
+        "incremental": { "type": ["string", "null"] },
+        "changed_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "status"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "status": {
+                "type": "string",
+                "enum": ["added", "modified", "removed", "renamed"]
+              },
+              "previous_path": { "type": ["string", "null"] },
+              "additions": { "type": "integer", "minimum": 0 },
+              "deletions": { "type": "integer", "minimum": 0 },
+              "binary": { "type": "boolean" },
+              "generated": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+
+    "policy": {
+      "type": "object",
+      "required": ["riskTierRules", "dispatchPolicy"],
+      "properties": {
+        "version": { "type": "string" },
+        "riskTierRules": {
+          "type": "object",
+          "description": "tier -> glob patterns. Evaluated highest-tier-first; highest match wins.",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "dispatchPolicy": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/TierPolicy" }
+        },
+        "dispatchOverrides": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/Override" }
+        },
+        "subtractEnabled": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "waiverPolicy": { "type": "object" },
+        "budget": { "type": "object" }
+      }
+    },
+
+    "trusted_context": {
+      "type": "object",
+      "properties": {
+        "instruction_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "content"],
+            "properties": {
+              "path": { "type": "string" },
+              "content": { "type": "string" }
+            }
+          }
+        },
+        "reference_docs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "content"],
+            "properties": {
+              "path": { "type": "string" },
+              "content": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "deterministic_audit": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "source", "severity", "kind", "detail"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1 },
+              "source": { "type": "string" },
+              "path": { "type": ["string", "null"] },
+              "line": { "type": ["integer", "null"], "minimum": 1 },
+              "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+              "kind": { "type": "string", "enum": ["finding", "review-required"] },
+              "detail": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "prior_state": {
+      "type": "object",
+      "properties": {
+        "ledger": { "type": ["object", "null"] },
+        "author_replies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["thread_id", "author", "body"],
+            "properties": {
+              "thread_id": { "type": "string" },
+              "finding_id": { "type": ["string", "null"] },
+              "author": { "type": "string" },
+              "body": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "inject_failure": {
+      "type": ["object", "null"],
+      "description": "Harness-only directive. When present, the system MUST simulate the named reviewer failing in the given mode, and MUST report it as a genuine failure in coverage.failed with coverage.complete=false — never as an empty result. Absent in production requests.",
+      "additionalProperties": false,
+      "required": ["persona_id", "mode"],
+      "properties": {
+        "persona_id": { "type": "string", "minLength": 1 },
+        "mode": {
+          "type": "string",
+          "enum": ["malformed_json", "timeout", "reviewed_false", "missing_summary"]
+        }
+      }
+    },
+
+    "run": {
+      "type": "object",
+      "required": ["run_id", "trigger"],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "trigger": {
+          "type": "string",
+          "enum": ["initial", "code_changed", "comment", "manual", "scheduled"]
+        },
+        "actor": { "type": "string" },
+        "deadline_ms": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+
+  "$defs": {
+    "TierPolicy": {
+      "type": "object",
+      "required": ["council"],
+      "properties": {
+        "council": { "type": "array", "items": { "type": "string" } },
+        "councilParallel": { "type": "boolean" },
+        "personaThinkingOverrides": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "finalFreshCouncil": { "type": "array", "items": { "type": "string" } },
+        "coordinator": { "type": ["object", "null"] },
+        "maxProjectionTokens": { "type": "integer", "minimum": 0 },
+        "publication": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "publish": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] }
+              },
+              "p3Cap": { "type": "integer", "minimum": 0 },
+              "reversalHandling": {
+                "type": "string",
+                "enum": ["require_justification", "auto_retract", "allow_independent"]
+              }
+            }
+          }
+        },
+        "halt": {
+          "type": "object",
+          "properties": {
+            "zeroOpen": { "type": "array", "items": { "type": "string" } },
+            "zeroNewThisTurn": { "type": "array", "items": { "type": "string" } },
+            "maxTurns": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "stateMachine": {
+          "type": "object",
+          "properties": {
+            "skipStates": { "type": "array", "items": { "type": "string" } },
+            "mandatoryStates": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+
+    "Override": {
+      "type": "object",
+      "required": ["test", "appliesTo"],
+      "properties": {
+        "test": { "type": "array", "items": { "type": "string" } },
+        "exclude": { "type": "array", "items": { "type": "string" } },
+        "appliesTo": {
+          "oneOf": [
+            { "type": "string", "const": "*" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "match": {
+          "type": "string",
+          "enum": ["every", "any"],
+          "description": "every = subtractive (all changed files must be in scope); any = additive (at least one)."
+        },
+        "skipWhenCouncilEmpty": { "type": "boolean" },
+        "effect": { "type": "object" },
+        "addCouncil": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

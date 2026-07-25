@@ -1,0 +1,442 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/council/coordinator-output@1.0.0.json",
+  "title": "CoordinatorOutput",
+  "description": "What the coordinator returns. See spec/04-coordinator.md \u00a74.5. All seven top-level keys are REQUIRED, including empty arrays \u2014 this forces the model to consider each disposition axis every turn. The coordinator MUST NOT emit a stable `id`; identity is orchestrator-owned.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "overall_rating",
+    "ledger_updates",
+    "candidates",
+    "suppress",
+    "audit_row_dispositions",
+    "thread_actions",
+    "reversals"
+  ],
+  "properties": {
+    "overall_rating": {
+      "type": "string",
+      "enum": [
+        "CLEAN",
+        "MINOR_CONCERNS",
+        "MAJOR_CONCERNS",
+        "BLOCKING"
+      ],
+      "description": "The coordinator's assessment. The orchestrator RECOMPUTES the published rating from the surviving finding set; disagreement is recorded as a diagnostic."
+    },
+    "ledger_updates": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "prior_finding_id",
+          "new_status",
+          "superseding_candidate_ref",
+          "reason",
+          "evidence"
+        ],
+        "properties": {
+          "prior_finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "new_status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "unresolved",
+              "fixed",
+              "reversed",
+              "superseded"
+            ]
+          },
+          "superseding_candidate_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/$defs/Anchor"
+            }
+          }
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_ref",
+          "prior_finding_id",
+          "supersedes_finding_id",
+          "title",
+          "severity",
+          "category",
+          "confidence",
+          "evidence",
+          "details",
+          "caused_by_change"
+        ],
+        "properties": {
+          "candidate_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "prior_finding_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "supersedes_finding_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "correctness",
+              "security",
+              "performance",
+              "testing",
+              "maintainability",
+              "readability",
+              "structure",
+              "audience",
+              "completeness",
+              "ci-workflow"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/Anchor"
+            }
+          },
+          "details": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "caused_by_change": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "REQUIRED true for a finding whose evidence anchors resolve to file_only. Asserts the change CAUSED the issue, not merely that it is nearby. Replaces the prose-marker conventions three independent implementations each invented differently."
+          }
+        }
+      }
+    },
+    "suppress": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_ref",
+          "reason"
+        ],
+        "properties": {
+          "candidate_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "audit_row_dispositions": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "row_label",
+              "disposition",
+              "candidate_ref",
+              "reason"
+            ],
+            "properties": {
+              "row_label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "disposition": {
+                "const": "finding"
+              },
+              "candidate_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "row_label",
+              "disposition",
+              "reason"
+            ],
+            "properties": {
+              "row_label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "disposition": {
+                "const": "invalidated"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "row_label",
+              "disposition",
+              "reason"
+            ],
+            "properties": {
+              "row_label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "disposition": {
+                "const": "unresolved"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "thread_actions": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "thread_id",
+          "action",
+          "reason"
+        ],
+        "properties": {
+          "thread_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "resolve",
+              "keep_open",
+              "update"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "reversals": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Silent reversals are REJECTED by the orchestrator. A previously published finding that simply stops being mentioned, with no entry here, is a contract violation.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_ref",
+          "prior_finding_id",
+          "decision",
+          "superseding_candidate_ref",
+          "justification"
+        ],
+        "properties": {
+          "candidate_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "prior_finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "retract",
+              "supersede"
+            ]
+          },
+          "superseding_candidate_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "line",
+        "side",
+        "start_line",
+        "start_side",
+        "diff_hunk",
+        "symbol",
+        "code_context_hash"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "side": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            null
+          ]
+        },
+        "start_line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "start_side": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            null
+          ]
+        },
+        "diff_hunk": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "symbol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code_context_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

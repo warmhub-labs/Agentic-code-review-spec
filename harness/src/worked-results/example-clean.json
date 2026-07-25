@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "run-example-clean",
+  "change_id": "example-clean",
+  "head_sha": "ab057ab477e1c0a30b4ca92044e25877890ebf98",
+  "outcome": "engaged",
+  "turn_state": "INITIAL",
+  "routing": {
+    "tier": "medium",
+    "static_floor": "medium",
+    "matched_rules": [
+      "medium:src/**"
+    ],
+    "overrides_fired": [],
+    "council_declared": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency"
+    ],
+    "packet_digest": "4e90a17d3c825bf6019d4a7e2c8b53f0d61e97a4b2c08d3f5e714a6c9b02d8f3"
+  },
+  "coverage": {
+    "declared": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency"
+    ],
+    "returned": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency"
+    ],
+    "failed": [],
+    "complete": true,
+    "coordinator_ran": true,
+    "coordinator_source": "synthesis",
+    "deadline_exceeded": false,
+    "publication_truncated": false
+  },
+  "overall_rating": "CLEAN",
+  "blocking": false,
+  "halt": {
+    "should_halt": true,
+    "reason": "no open findings at or above the tier blocking set"
+  },
+  "findings": [],
+  "suppressed_count": 0,
+  "audit_rows_dispositioned": 0,
+  "audit_rows_undischarged": 0,
+  "reviewer_summaries": [
+    {
+      "persona_id": "specialist-correctness-general",
+      "summary": "Extracting the inline union into a named OrderStatus alias is behaviour-preserving; every member is identical and no call site narrows on the literal type.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/types.ts",
+        "src/routes.ts",
+        "src/db.ts"
+      ]
+    },
+    {
+      "persona_id": "specialist-security",
+      "summary": "No trust boundary, auth path, or external input is touched by this types-only change.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/types.ts"
+      ]
+    },
+    {
+      "persona_id": "specialist-perf-sql",
+      "summary": "No query, loop, or allocation is affected; type aliases are erased at compile time.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/types.ts"
+      ]
+    },
+    {
+      "persona_id": "specialist-testing",
+      "summary": "No new branch is introduced, so no new test is required; existing tests continue to typecheck against the alias.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/types.ts",
+        "test/routes.test.js"
+      ]
+    },
+    {
+      "persona_id": "specialist-consistency",
+      "summary": "The alias matches naming used elsewhere in the module and the added comment is accurate for the three states.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/types.ts"
+      ]
+    }
+  ],
+  "telemetry": {
+    "duration_ms": 41880,
+    "cost_usd": 0.21,
+    "input_tokens": 61340,
+    "output_tokens": 2110,
+    "per_persona": [
+      {
+        "persona_id": "specialist-correctness-general",
+        "duration_ms": 22400,
+        "cost_usd": 0.06,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-security",
+        "duration_ms": 14100,
+        "cost_usd": 0.03,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-perf-sql",
+        "duration_ms": 12900,
+        "cost_usd": 0.03,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-testing",
+        "duration_ms": 18600,
+        "cost_usd": 0.05,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-consistency",
+        "duration_ms": 15200,
+        "cost_usd": 0.04,
+        "status": "completed"
+      }
+    ]
+  },
+  "errors": []
+}

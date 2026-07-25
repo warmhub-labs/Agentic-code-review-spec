@@ -1,0 +1,574 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/council/review-result@1.0.0.json",
+  "title": "ReviewResult",
+  "description": "The output contract of a conforming code review system. See spec/05-findings-contract.md \u00a75.8.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "change_id",
+    "head_sha",
+    "outcome",
+    "turn_state",
+    "routing",
+    "coverage",
+    "overall_rating",
+    "blocking",
+    "findings",
+    "reviewer_summaries",
+    "telemetry"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "change_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "head_sha": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "engaged",
+        "skipped",
+        "escalated",
+        "failed",
+        "deferred"
+      ]
+    },
+    "turn_state": {
+      "type": "string",
+      "enum": [
+        "INITIAL",
+        "FIX_VERIFICATION",
+        "AUTHOR_RESPONSE_REVIEW",
+        "CONVERGENCE",
+        "FINAL_FRESH",
+        "SKIP_SAME_CONTEXT",
+        "SKIP_TIER_POLICY",
+        "NEEDS_HUMAN_ESCALATION"
+      ]
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "static_floor",
+        "matched_rules",
+        "overrides_fired",
+        "council_declared",
+        "packet_digest"
+      ],
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "static_floor": {
+          "$ref": "#/$defs/Tier"
+        },
+        "matched_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides_fired": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "council_declared": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "packet_digest": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declared",
+        "returned",
+        "failed",
+        "complete",
+        "coordinator_ran",
+        "coordinator_source",
+        "deadline_exceeded",
+        "publication_truncated"
+      ],
+      "properties": {
+        "declared": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "returned": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "persona_id",
+              "reason"
+            ],
+            "properties": {
+              "persona_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "coordinator_ran": {
+          "type": "boolean"
+        },
+        "coordinator_source": {
+          "type": "string",
+          "enum": [
+            "synthesis",
+            "deadline_fallback",
+            "none"
+          ],
+          "description": "How the coordinator output was obtained. 'none' when no coordinator ran at all \u2014 a coordinator failure is NOT a deadline fallback, and three implementations each had to improvise a value here. complete MUST be false unless this is 'synthesis'."
+        },
+        "deadline_exceeded": {
+          "type": "boolean"
+        },
+        "publication_truncated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "overall_rating": {
+      "type": "string",
+      "enum": [
+        "CLEAN",
+        "MINOR_CONCERNS",
+        "MAJOR_CONCERNS",
+        "BLOCKING"
+      ]
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "halt": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "should_halt",
+        "reason"
+      ],
+      "properties": {
+        "should_halt": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Finding"
+      }
+    },
+    "suppressed_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "audit_rows_dispositioned": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "audit_rows_undischarged": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reviewer_summaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "persona_id",
+          "summary",
+          "candidate_count"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "files_reviewed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration_ms",
+        "cost_usd",
+        "per_persona"
+      ],
+      "properties": {
+        "duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "per_persona": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "persona_id",
+              "duration_ms",
+              "cost_usd",
+              "status"
+            ],
+            "properties": {
+              "persona_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "duration_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cost_usd": {
+                "type": "number",
+                "minimum": 0
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "failed",
+                  "timeout",
+                  "salvaged"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage",
+          "message",
+          "fatal"
+        ],
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fatal": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Tier": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "Severity": {
+      "type": "string",
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "Category": {
+      "type": "string",
+      "enum": [
+        "correctness",
+        "security",
+        "performance",
+        "testing",
+        "maintainability",
+        "readability",
+        "structure",
+        "audience",
+        "completeness",
+        "ci-workflow"
+      ]
+    },
+    "ResolvedAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "line",
+        "side",
+        "anchor_status"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "side": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            null
+          ]
+        },
+        "start_line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "start_side": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            null
+          ]
+        },
+        "symbol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "anchor_status": {
+          "type": "string",
+          "enum": [
+            "current_diff",
+            "file_only",
+            "stale",
+            "unanchorable"
+          ]
+        }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "severity",
+        "category",
+        "confidence",
+        "status",
+        "details",
+        "evidence",
+        "published",
+        "publication_surface",
+        "origin"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "category": {
+          "$ref": "#/$defs/Category"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "unresolved",
+            "fixed",
+            "disputed",
+            "waived",
+            "stale",
+            "superseded",
+            "reversed"
+          ]
+        },
+        "details": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ResolvedAnchor"
+          }
+        },
+        "published": {
+          "type": "boolean"
+        },
+        "publication_surface": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "summary",
+            "suppressed"
+          ]
+        },
+        "suppression_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "council",
+            "coordinator",
+            "deterministic_scanner",
+            "audit_row"
+          ]
+        },
+        "attributed_personas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supersedes_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "superseded_by_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "first_seen_turn": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "first_published_turn": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

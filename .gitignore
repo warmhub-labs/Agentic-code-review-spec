@@ -1,0 +1,8 @@
+
+**/.DS_Store
+.DS_Store
+harness/corpus-v1/
+harness/corpus/
+harness/node_modules/
+harness/runs/
+node_modules/

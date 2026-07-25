@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "run-example-defective",
+  "change_id": "example-defective",
+  "head_sha": "de7c4af54b4df00f37cc270b983e572e7cb990d4",
+  "outcome": "engaged",
+  "turn_state": "INITIAL",
+  "routing": {
+    "tier": "high",
+    "static_floor": "high",
+    "matched_rules": [
+      "high:src/auth.ts"
+    ],
+    "overrides_fired": [],
+    "council_declared": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency",
+      "specialist-general-reviewer"
+    ],
+    "packet_digest": "b7c1f0e2a9d43c58e1b6042f7a35c9d81e4f6a2b0c7d9e35418af62c0d3b7e91"
+  },
+  "coverage": {
+    "declared": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency",
+      "specialist-general-reviewer"
+    ],
+    "returned": [
+      "specialist-correctness-general",
+      "specialist-security",
+      "specialist-perf-sql",
+      "specialist-testing",
+      "specialist-consistency",
+      "specialist-general-reviewer"
+    ],
+    "failed": [],
+    "complete": true,
+    "coordinator_ran": true,
+    "coordinator_source": "synthesis",
+    "deadline_exceeded": false,
+    "publication_truncated": false
+  },
+  "overall_rating": "BLOCKING",
+  "blocking": true,
+  "halt": {
+    "should_halt": false,
+    "reason": "open P0"
+  },
+  "findings": [
+    {
+      "id": "f-3a91c07e",
+      "title": "Session cache keyed on an 8-character token prefix bypasses signature verification",
+      "severity": "P0",
+      "category": "security",
+      "confidence": "high",
+      "status": "open",
+      "details": "verifySession returns a cached identity on any token whose first 8 characters match a previously-seen token, before the signature check runs. Attacker model: any caller who observes or guesses an 8-character prefix of a live session token can present `<prefix>.anything` and receive the cached userId and tenantId of the legitimate holder. The cache is process-global with no expiry, so one poisoned entry persists for the process lifetime and crosses tenants. This defeats the AGENTS.md invariant that every order read is tenant-scoped, because tenantId itself becomes attacker-selectable.",
+      "evidence": [
+        {
+          "path": "src/auth.ts",
+          "line": 20,
+          "side": "RIGHT",
+          "start_line": 19,
+          "start_side": "RIGHT",
+          "symbol": "verifySession",
+          "anchor_status": "current_diff"
+        }
+      ],
+      "published": true,
+      "publication_surface": "inline",
+      "suppression_reason": null,
+      "origin": "council",
+      "attributed_personas": [
+        "specialist-security",
+        "specialist-general-reviewer"
+      ],
+      "supersedes_id": null,
+      "superseded_by_id": null,
+      "first_seen_turn": 1,
+      "first_published_turn": 1
+    },
+    {
+      "id": "f-8d2b45f1",
+      "title": "Unbounded process-global session cache",
+      "severity": "P2",
+      "category": "performance",
+      "confidence": "medium",
+      "status": "open",
+      "details": "The cache has no size bound and no eviction. Each distinct token prefix adds an entry that is never removed, so memory grows with the number of distinct sessions the process has seen. Independent of the P0 above: fixing the key would leave this unbounded.",
+      "evidence": [
+        {
+          "path": "src/auth.ts",
+          "line": 3,
+          "side": "RIGHT",
+          "start_line": null,
+          "start_side": null,
+          "symbol": null,
+          "anchor_status": "current_diff"
+        }
+      ],
+      "published": true,
+      "publication_surface": "inline",
+      "suppression_reason": null,
+      "origin": "council",
+      "attributed_personas": [
+        "specialist-perf-sql"
+      ],
+      "supersedes_id": null,
+      "superseded_by_id": null,
+      "first_seen_turn": 1,
+      "first_published_turn": 1
+    },
+    {
+      "id": "f-c40e19aa",
+      "title": "Removed doc comment documented a load-bearing caller obligation",
+      "severity": "P3",
+      "category": "maintainability",
+      "confidence": "high",
+      "status": "open",
+      "details": "The deleted comment on requireAuth stated that it establishes identity only and that callers remain responsible for tenant scoping. That obligation still holds and is the exact invariant AGENTS.md names. Removing the note makes the next caller more likely to assume requireAuth is sufficient.",
+      "evidence": [
+        {
+          "path": "src/auth.ts",
+          "line": 12,
+          "side": "LEFT",
+          "start_line": null,
+          "start_side": null,
+          "symbol": "requireAuth",
+          "anchor_status": "current_diff"
+        }
+      ],
+      "published": true,
+      "publication_surface": "inline",
+      "suppression_reason": null,
+      "origin": "council",
+      "attributed_personas": [
+        "specialist-consistency"
+      ],
+      "supersedes_id": null,
+      "superseded_by_id": null,
+      "first_seen_turn": 1,
+      "first_published_turn": 1
+    },
+    {
+      "id": "f-5f7712bd",
+      "title": "Consider extracting the token prefix helper",
+      "severity": "P3",
+      "category": "readability",
+      "confidence": "low",
+      "status": "open",
+      "details": "token.slice(0, 8) appears twice. Suppressed by the coordinator: no concrete confusion scenario, and the correct fix for both sites is to stop using a prefix at all.",
+      "evidence": [
+        {
+          "path": "src/auth.ts",
+          "line": 24,
+          "side": "RIGHT",
+          "start_line": null,
+          "start_side": null,
+          "symbol": "verifySession",
+          "anchor_status": "current_diff"
+        }
+      ],
+      "published": false,
+      "publication_surface": "suppressed",
+      "suppression_reason": "no concrete failure scenario; superseded by the P0 fix on the same lines",
+      "origin": "council",
+      "attributed_personas": [
+        "specialist-consistency"
+      ],
+      "supersedes_id": null,
+      "superseded_by_id": null,
+      "first_seen_turn": 1,
+      "first_published_turn": null
+    }
+  ],
+  "suppressed_count": 1,
+  "audit_rows_dispositioned": 0,
+  "audit_rows_undischarged": 0,
+  "reviewer_summaries": [
+    {
+      "persona_id": "specialist-security",
+      "summary": "Inspected the new session cache and the verification path in verifySession; the cache short-circuits signature checking on a truncated key.",
+      "candidate_count": 1,
+      "files_reviewed": [
+        "src/auth.ts",
+        "src/types.ts",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "persona_id": "specialist-correctness-general",
+      "summary": "Traced resolveIdentity and requireAuth; control flow is unchanged apart from the cache, which the security lane owns.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/auth.ts",
+        "src/routes.ts"
+      ]
+    },
+    {
+      "persona_id": "specialist-perf-sql",
+      "summary": "No SQL in this diff; flagged the unbounded in-process cache as the only performance-relevant construct.",
+      "candidate_count": 1,
+      "files_reviewed": [
+        "src/auth.ts"
+      ]
+    },
+    {
+      "persona_id": "specialist-testing",
+      "summary": "The cache-hit path has no coverage; judged P3 and not emitted as a finding.",
+      "candidate_count": 0,
+      "files_reviewed": [
+        "src/auth.ts",
+        "test/routes.test.js"
+      ]
+    },
+    {
+      "persona_id": "specialist-consistency",
+      "summary": "Reviewed the deleted doc comment on requireAuth and the duplicated prefix expression.",
+      "candidate_count": 2,
+      "files_reviewed": [
+        "src/auth.ts",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "persona_id": "specialist-general-reviewer",
+      "summary": "Full breadth pass over the diff and its callers in src/routes.ts; the cache key is the dominant defect.",
+      "candidate_count": 1,
+      "files_reviewed": [
+        "src/auth.ts",
+        "src/routes.ts",
+        "src/db.ts"
+      ]
+    }
+  ],
+  "telemetry": {
+    "duration_ms": 84210,
+    "cost_usd": 0.62,
+    "input_tokens": 148920,
+    "output_tokens": 9840,
+    "per_persona": [
+      {
+        "persona_id": "specialist-security",
+        "duration_ms": 41200,
+        "cost_usd": 0.14,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-correctness-general",
+        "duration_ms": 33800,
+        "cost_usd": 0.09,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-perf-sql",
+        "duration_ms": 21400,
+        "cost_usd": 0.06,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-testing",
+        "duration_ms": 25100,
+        "cost_usd": 0.07,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-consistency",
+        "duration_ms": 28600,
+        "cost_usd": 0.08,
+        "status": "completed"
+      },
+      {
+        "persona_id": "specialist-general-reviewer",
+        "duration_ms": 52700,
+        "cost_usd": 0.18,
+        "status": "completed"
+      }
+    ]
+  },
+  "errors": []
+}
