@@ -140,7 +140,7 @@ Every result carries one. It is computed, never asserted.
 complete =  failed.length == 0
         AND declared ⊆ returned
         AND coordinator_ran
-        AND coordinator_source == "synthesis"
+        AND coordinator_source == "synthesis"     // not "deadline_fallback", not "none"
         AND NOT deadline_exceeded
 ```
 

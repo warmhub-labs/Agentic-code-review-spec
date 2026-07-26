@@ -217,8 +217,24 @@ forms); connection URLs with inline credentials; generic high-entropy strings
 above a configured length (emitted at `confidence: medium` — this class is a
 weak signal and MUST be gradeable down by the coordinator).
 
-**False positives** are handled downstream, not by weakening the detector: the
-author disputes, and the disposition rules in Part 6 allow a waiver.
+**Surface gating.** The scanner MUST apply the same surface distinction §1.6
+gives the injection scanner. A credential-shaped literal inside a test fixture,
+a documentation example, or a recorded HTTP cassette is an **artifact surface**:
+record it as observed, emit no finding. High-entropy heuristics in particular
+SHOULD be restricted to configuration-shaped paths, since prose, lockfiles and
+minified assets produce them constantly.
+
+Without this, the asymmetry is indefensible: the injection scanner gets an
+explicit artifact carve-out with its own conformance gate, while the secret
+scanner — whose firing is a **mandatory P0 that bypasses the model entirely** —
+gets none. A fixture-borne false positive is therefore unfilterable within the
+turn, and any repository holding security test data will produce them on every
+run. Four independent implementations shipped ungated scanners; the production
+reference gates by path class.
+
+**Genuine false positives** that survive gating are handled downstream, not by
+weakening the detector: the author disputes, and the disposition rules in Part 6
+allow a waiver.
 
 ---
 
@@ -284,6 +300,25 @@ The sandbox MUST enforce:
 - Symlinks whose targets resolve outside the root are refused.
 - Submodules are not followed automatically.
 - **No process execution. No network access. No writes.**
+- **The reviewer process inherits an explicit environment allowlist, never the
+  orchestrator's own environment.** Build a fresh environment containing only
+  what the substrate needs to run — typically its own credential, `HOME`,
+  `PATH`, its config directory, locale, and proxy settings. Everything else is
+  excluded by default rather than by enumeration.
+
+  This matters more than it looks. The orchestrator runs with credentials the
+  reviewer has no business holding: telemetry keys, application credentials,
+  the CI runner's own token. A reviewer that inherits them is one prompt
+  injection away from exfiltrating them, and the diff it is reading is
+  attacker-controlled by construction (§1.6).
+
+  Four independent implementations built from an earlier version of this
+  specification each passed the full ambient environment to their reviewer
+  subprocesses. None of them was careless; the specification simply never
+  mentioned it, while listing paths, symlinks, submodules, process execution,
+  network, writes, read bounds, binary handling and search bounds. The
+  production system this specification was distilled from had already closed
+  the hole — the knowledge lived in its code, not in its design.
 - Bounded reads: a maximum bytes-per-call and a maximum files-per-turn.
 - Binary reads refused unless the path matches an explicit allowlist.
 - Bounded search: a maximum match count, and a cap on pattern complexity.
@@ -295,6 +330,31 @@ conclude the file does not exist and reason wrongly.
 
 Available tools SHOULD be exactly: read a file, search file contents, expand a
 path glob, list a directory. Nothing else.
+
+**On enforcing this when the substrate owns the tools.** The sandbox above reads
+as a port the implementation interposes on. For most substrates that is not
+buildable: the model's `read`/`grep`/`glob` calls are handled inside the
+provider's own agent loop, and there is no seam to intercept them. An
+implementation that defines a `Workspace` port, exercises it only in tests, and
+lets live reviewers use the substrate's native tools has a sandbox that protects
+nothing — a shape observed in three of four independent implementations.
+
+Where you cannot interpose, **make the bytes safe instead of guarding the
+read**. Concretely:
+
+- Materialise the reviewer's working tree as a prepared copy rather than
+  pointing it at the original checkout, so path scope is enforced by what
+  exists rather than by a refused call.
+- Apply §1.5's secret redaction to that copy, not only to the model-bound diff.
+  A reviewer that can open the file can read the secret the diff redacted, and
+  §1.5's promise that the model never sees the secret value is otherwise
+  unenforceable.
+- Exclude what the tool allowlist would have refused — submodules, out-of-root
+  symlinks, binaries outside the allowlist.
+
+An implementation MUST state which approach it uses. "Interposed port" and
+"prepared tree" are both conforming; claiming the former while shipping the
+latter is not.
 
 ---
 
@@ -315,10 +375,18 @@ Rules:
 - Every in-scope row MUST be explicitly discharged by each reviewer that
   received it: accepted as a finding, downgraded with a reason, or dismissed
   with a reason.
-- **Rows are identified by their `label`, verbatim.** The label is the discharge
-  key that appears in `audit_rows_reviewed` and in the coordinator's
-  `audit_row_dispositions`. Implementations MUST NOT re-derive, normalize, or
-  abbreviate it.
+- **Rows are identified by `"<source>: <label>"`** — the row's `source` field,
+  a colon and a space, then its `label` verbatim. That composite string is the
+  discharge key appearing in `audit_rows_reviewed` and in the coordinator's
+  `audit_row_dispositions.row_label`. Implementations MUST NOT re-derive,
+  normalize, or abbreviate either component.
+
+  The source component is load-bearing: two audits can legitimately emit the
+  same label for the same path, and a bare label silently collapses them into
+  one discharge. Earlier versions of this specification required the bare label
+  in this section while showing the composite form in §3.6's worked example —
+  implementations split between the two readings, which is what the
+  contradiction guarantees.
 
 This definition is deliberately broad, and the cost is real: on a lint-heavy
 repository every reviewer discharges every row, which is redundant token spend.

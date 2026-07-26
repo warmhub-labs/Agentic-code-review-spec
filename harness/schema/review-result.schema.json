@@ -345,6 +345,11 @@
           }
         }
       }
+    },
+    "candidates_undischarged": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Council candidates the coordinator neither promoted nor suppressed. Counterpart of audit_rows_undischarged; see spec/04-coordinator.md \u00a74.4."
     }
   },
   "$defs": {
@@ -567,6 +572,13 @@
             "null"
           ],
           "minimum": 1
+        },
+        "merged_candidate_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Namespaced candidate_refs that merged into this finding, including its own. Makes the candidate_ref -> finding id resolution mandated by spec \u00a75.1 step 1 expressible in the output contract; it previously was not."
         }
       }
     }

@@ -52,7 +52,7 @@ ran.
 ### What "working" means
 
 The specification ships its own acceptance test. `spec/09-conformance.md`
-defines 63 hard gates — contract violations, all checkable deterministically
+defines 73 hard gates — contract violations, all checkable deterministically
 against fakes in about a second, with no provider and no cost. If the
 conformance suite is green, the implementation is conforming.
 
@@ -316,7 +316,7 @@ spec/
   06-state-and-ledger.md    two-axis identity, states, ledger, projection, halting, checkpoints
   07-failure-and-coverage.md failure isolation, salvage, deadlines, the coverage report
   08-ports.md               model, change provider, workspace, ledger, telemetry, evidence
-  09-conformance.md         63 hard gates + graded criteria
+  09-conformance.md         73 hard gates + graded criteria
 
 protocol/
   PROTOCOL.md               the six-phase loop, blinding rules, interpretation

@@ -186,9 +186,17 @@ the loop terminate.
 candidate is either promoted into `candidates`, or listed in `suppress` with a
 reason. Silence on a candidate is a contract violation, not a rejection.
 
-The orchestrator MUST detect undischarged candidates and report them. An
-implementation MAY re-emit an undischarged candidate at its proposing
-reviewer's severity, exactly as it does for an undischarged audit row.
+The orchestrator MUST detect undischarged candidates and report them in
+`ReviewResult.candidates_undischarged`, the exact counterpart of
+`audit_rows_undischarged`. An implementation MAY re-emit an undischarged
+candidate at its proposing reviewer's severity, exactly as it does for an
+undischarged audit row.
+
+The counter is not bookkeeping. The asymmetry this rule was written to remove
+survives in the instrumentation if only one of the two is counted: an
+undischarged audit row is visible in every result, an undischarged candidate is
+not, and the failure mode that motivated the rule is precisely a candidate
+disappearing without trace.
 
 This rule was added after the fact, and it was expensive to learn. The
 specification originally required explicit disposition for every audit row and

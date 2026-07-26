@@ -104,6 +104,15 @@ Structural anchor rules (rejected at validation):
 
 - `start_line` set without `start_side`.
 - `start_line > line`.
+- **A multi-line anchor whose `start_line` falls outside a diff hunk.** Both
+  ends must resolve, not just `line`. An anchor with `line` inside a hunk and
+  `start_line` above it is `file_only`, not `current_diff`.
+
+  That last rule exists for a reason worth stating plainly, because it is
+  invisible until publication: review APIs reject a multi-line inline comment
+  whose range is not wholly contained in the diff, and they reject it at
+  publish time — after every token has been spent. Two of four independent
+  implementations tested only `line` and would have failed at the last step.
 - Non-positive or non-integer line numbers.
 - `side` values outside `LEFT` / `RIGHT` / null.
 

@@ -183,7 +183,8 @@
         "additionalProperties": false,
         "required": [
           "candidate_ref",
-          "reason"
+          "reason",
+          "duplicate_of_candidate_ref"
         ],
         "properties": {
           "candidate_ref": {
@@ -193,6 +194,13 @@
           "reason": {
             "type": "string",
             "minLength": 1
+          },
+          "duplicate_of_candidate_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When this candidate is suppressed as a duplicate, the candidate_ref it merged into. Replaces the prose convention 'duplicate of <ref>' in reason, which four independent implementations each invented in a different, mutually unparseable form."
           }
         }
       }

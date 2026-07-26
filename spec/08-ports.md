@@ -48,6 +48,13 @@ ask({
 - When `schema` is supplied, the adapter is responsible for obtaining conforming
   output, including retry. Schema violations surface to the caller as failures,
   not as silently repaired output.
+- **Retry is bounded and accounted.** Declare the maximum attempts, and include
+  every attempt's duration and cost in the `telemetry.per_persona` entry for
+  that reviewer. A retry hidden inside the adapter is a reviewer that costs two
+  or three times what the accounting says it does — and since a flaky reviewer
+  retries most, the configurations that look cheapest under such accounting are
+  the least reliable ones. Part 7 §7.9 requires failed reviewers' cost to be
+  recorded for the same reason.
 - Timeouts return a failure, not a partial result.
 - Token counts and cost are captured **for failed calls too** (Part 7 §7.9).
 - The session transcript path is returned, so §7.4 salvage and post-hoc audit

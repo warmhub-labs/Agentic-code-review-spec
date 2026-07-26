@@ -128,6 +128,26 @@ identifiers are record labels for the checklist, not a taxonomy to learn.
 | C-62 | The routing decision — tier, matched rules, fired overrides — is recoverable from the run record. |
 | C-63 | Reviewer summaries are retained and rendered even for reviewers with zero candidates. |
 
+### Amendment gates
+
+These close requirements added after the four-implementation experiment. Several
+earlier amendments shipped as prose with no gate; an unenforced MUST is a
+suggestion, and the asymmetry those amendments were written to remove survives
+in the instrumentation until a gate names it.
+
+| # | Gate |
+|---|---|
+| C-64 | The reviewer process receives an explicit environment allowlist, not the orchestrator's environment. A variable absent from the allowlist is absent from the child. |
+| C-65 | The implementation declares which §1.7 approach it uses — interposed port or prepared tree — and the live reviewer read path actually goes through it. |
+| C-66 | A credential-shaped literal on an artifact surface (test fixture, documentation example, recorded cassette) produces no secret finding. |
+| C-67 | Audit rows are discharged by the composite `"<source>: <label>"` key; two rows sharing a label across different sources are distinct discharges. |
+| C-68 | A multi-line anchor whose `start_line` falls outside a diff hunk resolves to `file_only`, never `current_diff`. |
+| C-69 | `candidates_undischarged` is present and correct: a council candidate the coordinator neither promoted nor suppressed increments it. |
+| C-70 | A coordinator failure produces exactly the §7.8.1 shape — `outcome: failed`, `coordinator_ran: false`, `coordinator_source: "none"`, `complete: false`, never `CLEAN`, council candidates suppressed with reason `coordinator_failure`. |
+| C-71 | `coverage.complete` is false when `coordinator_source` is `"none"`, matching the §7.6 formula. |
+| C-72 | Adapter retries are bounded by a declared maximum, and every attempt's duration and cost appears in that reviewer's `telemetry.per_persona` entry. |
+| C-73 | A finding merged from multiple candidates carries every contributing `candidate_ref` in `merged_candidate_refs`, including its own. |
+
 ---
 
 ## 9.3 Graded criteria
